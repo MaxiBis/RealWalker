@@ -16,16 +16,23 @@ void setup() {
 void loop() {
   
   if(Serial.available() > 0){                               // Checks whether data is comming from the serial port
-    char rawInput[5]="00000";                               //The character array is used as buffer to read into.
-    int x = Serial.readBytesUntil("\n",rawInput,5);         //It require two things, variable name to read into, number of bytes to read.
-    input = ((String(rawInput)).substring(0,x-1)).toInt();
-    Serial.print("Se leyo: ");    
-    Serial.println(input);    
+    readSerial();
   }  
 
   if (input >=0 && input < 11) {setUpMotorSpeed();}
   else if (input == 11) {configureScale();}
 }  
+
+void readSerial() {
+  char rawInput[5]="00000";                               //The character array is used as buffer to read into.
+  int x = Serial.readBytesUntil("\n",rawInput,5);         //It require two things, variable name to read into, number of bytes to read.
+  Serial.print("Se leyo crudo: ");    
+  Serial.println(rawInput);    
+  //input = ((String(rawInput)).substring(0,x-1)).toInt();  //works fine with pc/console serial input
+  input = ((String(rawInput)).substring(0,x)).toInt();      //works fine with Bluetooth serial input
+  Serial.print("Se leyo: ");    
+  Serial.println(input);    
+}
 
 void setUpMotorSpeed() {
   Serial.print("Velocidad ");
@@ -40,11 +47,7 @@ void configureScale() {
   
   while (!((input == 12) || (input == 13))){
     if(Serial.available() > 0){   // Checks whether data is comming from the serial port
-      char rawInput[5]="00000";//The character array is used as buffer to read into.
-      int x = Serial.readBytesUntil("\n",rawInput,5);//It require two things, variable name to read into, number of bytes to read.
-      input = ((String(rawInput)).substring(0,x-1)).toInt();
-      Serial.print("Se leyo entrada: ");    
-      Serial.println(input);    
+      readSerial();
     }
   }
   if(input == 12){ 
@@ -53,16 +56,13 @@ void configureScale() {
     Serial.println(valorMinimo);  
   }
   if(input == 13){ 
-    Serial.print("Cancelado");    
+    Serial.println("Valor minimo cancelado");    
   }                  
   input = -1;    
+  Serial.println("colocar peso maximo e ingresar 12 para OK, o 13 para salir");
   while (!((input == 12) || (input == 13))){
     if(Serial.available() > 0){   // Checks whether data is comming from the serial port
-      char rawInput[5]="00000";//The character array is used as buffer to read into.
-      int x = Serial.readBytesUntil("\n",rawInput,5);//It require two things, variable name to read into, number of bytes to read.
-      input = ((String(rawInput)).substring(0,x-1)).toInt();
-      Serial.print("Se leyo entrada: ");    
-      Serial.println(input);    
+      readSerial();  
     }
   }
   if(input == 12){ 
@@ -71,7 +71,7 @@ void configureScale() {
     Serial.println(valorMaximo);  
   }
   if(input == 13){ 
-    Serial.print("Cancelado");    
+    Serial.println("Valor minimo cancelado");    
   }     
   
 }

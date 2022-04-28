@@ -1,12 +1,16 @@
-#define ledPin 7
+//Connections
+int sensorPin = A0;                           //scale pin
+int motorOutput = 0;                          //pwm output
+
+//Variables
 int state = 0;
 int input;
-int motorOutput = 5;
-int sensorPin = A0; 
-int valorMinimo = 0;
-int valorMaximo = 1024;
 int valorLeido = 500;
-int calibratedWeight = 20;
+  //Configuration
+  int calibratedWeight = 20;                  //equals 20kg
+  int valorMinimo = 0;
+  int valorMaximo = 1024;
+
 
 void setup() {
   pinMode(motorOutput, OUTPUT);
@@ -23,18 +27,20 @@ void loop() {
   else if (input == 11) {configureScaleZero();}
   else if (input == 12) {configureScaleCalibrated();}
   else if (input == 13) {getScaleValue();}
-  input = -1;                             // Avoid re-set the pwm signal every loop
+  input = -1;                                               // Avoid re-call the functions every loop
 }  
 
 void readSerial() {
-  char rawInput[5]="00000";                               //The character array is used as buffer to read into.
-  int x = Serial.readBytesUntil("\n",rawInput,5);         //It require two things, variable name to read into, number of bytes to read.
-  //Serial.print("Se leyo raw: ");    
-  //Serial.print(rawInput);    
+  char rawInput[5]="00000";                                 //The character array is used as buffer to read into.
+  int x = Serial.readBytesUntil("\n",rawInput,5);           //It require two things, variable name to read into, number of bytes to read.
   //input = ((String(rawInput)).substring(0,x-1)).toInt();  //works fine with pc/console serial input
   input = ((String(rawInput)).substring(0,x)).toInt();      //works fine with Bluetooth serial input
-  //Serial.print(", Convertido: ");    
-  //Serial.println(input);    
+  /* //Debbuging functions
+  Serial.print("Se leyo raw: ");    
+  Serial.print(rawInput);      
+  Serial.print(", Convertido: ");    
+  Serial.println(input);
+  */
 }
 
 void setUpMotorSpeed() {
@@ -61,8 +67,10 @@ void getScaleValue() {
   float ratio_2 = (float) (valorMaximo-valorMinimo);
   float ratio = ratio_1/ratio_2;
   float weight = calibratedWeight*ratio;
-  //Serial.print("valorLeido: ");    
-  //Serial.print(valorLeido); 
-  //Serial.print(" Peso: ");    
+  /* //Debbuging functions
+  Serial.print("valorLeido: ");    
+  Serial.print(valorLeido); 
+  Serial.print(" Peso: ");    
+  */
   Serial.println(weight);   
 }

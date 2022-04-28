@@ -5,7 +5,8 @@ int motorOutput = 5;
 int sensorPin = A0; 
 int valorMinimo = 0;
 int valorMaximo = 1024;
-
+int valorLeido = 500;
+int calibratedWeight = 20;
 
 void setup() {
   pinMode(motorOutput, OUTPUT);
@@ -13,65 +14,55 @@ void setup() {
   Serial.println("Starting");
 }
 
-void loop() {
-  
+void loop() {  
   if(Serial.available() > 0){                               // Checks whether data is comming from the serial port
     readSerial();
   }  
 
   if (input >=0 && input < 11) {setUpMotorSpeed();}
-  else if (input == 11) {configureScale();}
+  else if (input == 11) {configureScaleZero();}
+  else if (input == 12) {configureScaleCalibrated();}
+  else if (input == 13) {getScaleValue();}
+  input = -1;                             // Avoid re-set the pwm signal every loop
 }  
 
 void readSerial() {
   char rawInput[5]="00000";                               //The character array is used as buffer to read into.
   int x = Serial.readBytesUntil("\n",rawInput,5);         //It require two things, variable name to read into, number of bytes to read.
-  Serial.print("Se leyo crudo: ");    
-  Serial.println(rawInput);    
+  //Serial.print("Se leyo raw: ");    
+  //Serial.print(rawInput);    
   //input = ((String(rawInput)).substring(0,x-1)).toInt();  //works fine with pc/console serial input
   input = ((String(rawInput)).substring(0,x)).toInt();      //works fine with Bluetooth serial input
-  Serial.print("Se leyo: ");    
-  Serial.println(input);    
+  //Serial.print(", Convertido: ");    
+  //Serial.println(input);    
 }
 
 void setUpMotorSpeed() {
   Serial.print("Velocidad ");
   Serial.println(input); 
   analogWrite(motorOutput, input * 25);   // 25 because: 255/10 ≃ 25
-  input = -1;                             // Avoid re-set the pwm signal every loop
 }
 
-void configureScale() {
-  Serial.println("Configuracion galga detectada");
-  Serial.println("colocar peso minimo e ingresar 12 para OK, o 13 para salir");
-  
-  while (!((input == 12) || (input == 13))){
-    if(Serial.available() > 0){   // Checks whether data is comming from the serial port
-      readSerial();
-    }
-  }
-  if(input == 12){ 
-    valorMinimo = analogRead(sensorPin);
-    Serial.print("Se leyo potenciometro: ");    
-    Serial.println(valorMinimo);  
-  }
-  if(input == 13){ 
-    Serial.println("Valor minimo cancelado");    
-  }                  
-  input = -1;    
-  Serial.println("colocar peso maximo e ingresar 12 para OK, o 13 para salir");
-  while (!((input == 12) || (input == 13))){
-    if(Serial.available() > 0){   // Checks whether data is comming from the serial port
-      readSerial();  
-    }
-  }
-  if(input == 12){ 
-    valorMaximo = analogRead(sensorPin);
-    Serial.print("Se leyo potenciometro: ");    
-    Serial.println(valorMaximo);  
-  }
-  if(input == 13){ 
-    Serial.println("Valor minimo cancelado");    
-  }     
-  
+void configureScaleZero() {
+  valorMinimo = analogRead(sensorPin);
+  Serial.print("Se leyo valor minimo balanza: ");    
+  Serial.println(valorMinimo); 
+}
+
+void configureScaleCalibrated() {
+  valorMaximo = analogRead(sensorPin);
+  Serial.print("Se leyo 20kg: ");    
+  Serial.println(valorMaximo);   
+}
+
+void getScaleValue() {
+  valorLeido = analogRead(sensorPin);
+  float ratio_1 = (float) (valorLeido-valorMinimo);
+  float ratio_2 = (float) (valorMaximo-valorMinimo);
+  float ratio = ratio_1/ratio_2;
+  float weight = calibratedWeight*ratio;
+  //Serial.print("valorLeido: ");    
+  //Serial.print(valorLeido); 
+  //Serial.print(" Peso: ");    
+  Serial.println(weight);   
 }

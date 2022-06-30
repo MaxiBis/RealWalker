@@ -1,6 +1,6 @@
 //Connections
 int sensorPin = A0;                           //scale pin
-int motorOutput = 0;                          //pwm output
+int motorOutput = 5;                          //pwm output
 
 //Variables
 int state = 0;

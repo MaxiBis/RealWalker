@@ -12,7 +12,7 @@ exports.handler = async (event, context) => {
   try {
     switch (event.routeKey) {
       case "GET /report/{uid}":
-        let res = await dynamo.scan({ TableName: "TrainLog" }).promise();
+        let res = await dynamo.scan({ TableName: "TrainLogs" }).promise();
         let uid = event.pathParameters.uid;
         let vals = {};
         let total = 0;

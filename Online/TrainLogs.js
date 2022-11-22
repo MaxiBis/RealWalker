@@ -11,34 +11,35 @@ exports.handler = async (event, context) => {
   try {
     switch (event.routeKey) {
       case "PUT /trainlogs":
+
         let requestJSON = JSON.parse(event.body);
         for (let i = 0; i < requestJSON.length; i++) {
           let vals = requestJSON[i];
           await dynamo.put({
             TableName: "TrainLogs",
             Item: {
-              id: vals.medic + "|" + vals.date_time,
+              id: vals.patient + "|" + vals.date_time,
               date_time: vals.date_time,
               paused: vals.paused,
               plan: vals.plan,
               notes: vals.notes,
               patient: vals.patient,
-              medic: vals.medic,
               effective_time: vals.effective_time,
+              weight: vals.weight,
             }
           }).promise();
         }
-        body = `Entrenamiento guardado`;
+        body = {'message': 'Entrenamiento guardado'};
         break;
       case "GET /trainlogs/user/{uid}":
         let res = await dynamo.scan({ TableName: "TrainLogs" }).promise();
         var uid = event.pathParameters.uid;
         body = [];
         for (let i = 0; i < res["Items"].length; i++) {
-          if (res["Items"][i]["medic"] == uid) {
+          if (res["Items"][i]["patient"] == uid) {
             body.push({
-              'patient': res["Items"][i]["patient"],
               'date_time': res["Items"][i]["date_time"],
+              'effective_time': res["Items"][i]["effective_time"],
             });
           }
         }
@@ -60,6 +61,7 @@ exports.handler = async (event, context) => {
             'plan': log.Item['plan'],
             'patient': log.Item['patient'],
             'effective_time': log.Item['effective_time'],
+            'weight': log.Item['weight'],
           };
         }
         else {
@@ -67,12 +69,12 @@ exports.handler = async (event, context) => {
         }
         break;
       default:
-        throw new Error(`Unsupported route: "${event.routeKey}"`);
+        throw new Error('Unsupported route: "${event.routeKey}"');
     }
   }
   catch (err) {
     statusCode = 400;
-    body = err.stack;
+    body = {'error': err.message};
   }
   finally {
     body = JSON.stringify(body);

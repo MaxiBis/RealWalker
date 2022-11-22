@@ -12,11 +12,26 @@ exports.handler = async (event, context) => {
   try {
     switch (event.routeKey) {
 
+      case "GET /patients":
+        let res = await dynamo.scan({ TableName: "Users" }).promise();
+        body = [];
+        for (let i = 0; i < res["Items"].length; i++) {
+          if (res["Items"][i]["medic"] == false) {
+            body.push({
+              'name': res["Items"][i]["name"],
+              'surname': res["Items"][i]["surname"],
+              'doc_type': res["Items"][i]["doc_type"],
+              'doc_number': res["Items"][i]["doc_number"],
+              'login': res["Items"][i]["login"],
+            });
+          }
+        }
+        break;
       case "GET /patients/{id}":
         let patient = await dynamo.get({
-          TableName: "Patients",
+          TableName: "Users",
           Key: {
-            id: event.pathParameters.id,
+            login: event.pathParameters.id,
           }
         }).promise();
         if (patient.Item) {
@@ -35,47 +50,42 @@ exports.handler = async (event, context) => {
           body = {};
         }
         break;
-      case "GET /patients/medic/{medic_id}":
-        let res = await dynamo.scan({ TableName: "Patients" }).promise();
-        let medic_id = event.pathParameters.medic_id;
-        body = [];
-        for (let i = 0; i < res["Items"].length; i++) {
-          let data = res["Items"][i];
-          if (data["medic_id"] == medic_id) {
-            body.push({
-              'full_name': data["full_name"],
-              'doc_type': data["doc_type"],
-              'doc_number': data["doc_number"],
-            });
-          }
-        }
-        body.sort(function(a, b){return a['full_name']-b['full_name']});
-        break;
       case "PUT /patients":
         let requestJSON = JSON.parse(event.body);
-        await dynamo.put({
-          TableName: "Patients",
-          Item: {
-            id: requestJSON.doc_type + '|' + requestJSON.doc_number,
-            medic_id: requestJSON.medic_id,
-            doc_type: requestJSON.doc_type,
-            doc_number: requestJSON.doc_number,
-            name: requestJSON.name,
-            surname: requestJSON.surname,
-            full_name: requestJSON.surname + ", " + requestJSON.name,
-            diagnosis: requestJSON.diagnosis,
-            height: requestJSON.height,
-            weight: requestJSON.weight,
-            birth_date: requestJSON.birth_date,
+        await dynamo.update({
+          TableName: "Users",
+          Key: {login: requestJSON.login},
+          AttributeUpdates: {
+            doc_type: {Action: 'PUT', Value: requestJSON.doc_type},
+            doc_number: {Action: 'PUT', Value: requestJSON.doc_number},
+            name: {Action: 'PUT', Value: requestJSON.name},
+            surname: {Action: 'PUT', Value: requestJSON.name},
+            diagnosis: {Action: 'PUT', Value: requestJSON.diagnosis},
+            height: {Action: 'PUT', Value: requestJSON.height},
+            weight: {Action: 'PUT', Value: requestJSON.weight},
+            birth_date: {Action: 'PUT', Value: requestJSON.birth_date},
           }
         }).promise();
-        body = `Se agregó paciente`;
+        body = {'message': 'Paciente guardado'};
         break;
+      case "PUT /patients/weight":
+        let weight_request = JSON.parse(event.body);
+        await dynamo.update({
+          TableName: "Users",
+          Key: {login: weight_request.login},
+          AttributeUpdates: {
+            weight: {Action: 'PUT', Value: weight_request.weight},
+          }
+        }).promise();
+        body = {'message': 'Peso guardado'};
+        break;
+      default:
+        throw new Error('Unsupported route: "${event.routeKey}"');
     }
   }
   catch (err) {
     statusCode = 400;
-    body = err.message;
+    body = {'error': err.message};
   }
   finally {
     body = JSON.stringify(body);

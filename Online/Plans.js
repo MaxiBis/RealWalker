@@ -16,7 +16,7 @@ exports.handler = async (event, context) => {
           TableName: "Plans",
           Key: { name: event.pathParameters.name }
         }).promise();
-        body = `Se eliminó ${event.pathParameters.name}`;
+        body = {'message': 'Se eliminó ${event.pathParameters.name}'};
         break;
       case "GET /plans/{name}":
         body = [];
@@ -31,8 +31,8 @@ exports.handler = async (event, context) => {
           for (let i = 0; i < steps.length; i++) {
             let step_data = steps[i].split(",");
             body.push({
-              'power': step_data[1],
-              'time': step_data[0],
+              'power': step_data[0],
+              'time': step_data[1],
             });
           }
         }
@@ -56,7 +56,7 @@ exports.handler = async (event, context) => {
             steps: requestJSON.steps,
           }
         }).promise();
-        body = `Se agregó ${requestJSON.name}`;
+        body = {'message': 'Plan agregado'};
         break;
       default:
         throw new Error(`Unsupported route: "${event.routeKey}"`);
@@ -64,10 +64,10 @@ exports.handler = async (event, context) => {
   }
   catch (err) {
     statusCode = 400;
-    body = err.message;
+    body = {'error': err.message};
   }
   finally {
-    body = JSON.stringify(body).replace(/"/g, "");
+    body = JSON.stringify(body);
   }
 
   return {

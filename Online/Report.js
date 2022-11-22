@@ -14,26 +14,29 @@ exports.handler = async (event, context) => {
       case "GET /report/{uid}":
         let res = await dynamo.scan({ TableName: "TrainLogs" }).promise();
         let uid = event.pathParameters.uid;
-        let vals = {};
-        let total = 0;
+        body = [];
         for (let i = 0; i < res["Items"].length; i++) {
-          if (res["Items"][i]["medic"] == uid) {
-            let patient = res["Items"][i]["patient"];
-            if (!(patient in vals)) {
-              vals[patient] = 0;
+          if (res["Items"][i]["patient"] == uid) {
+            let curr_time = parseInt(res["Items"][i]["effective_time"], 10);
+            let split_plan = res["Items"][i]["plan"].split(';');
+            let adapted_plan = [];
+            for (let step of split_plan){
+              let split_step = step.split(',');
+              let adapted_time = Math.min(split_step[1], curr_time);
+              adapted_plan.push(String(split_step[0]) + "," + String(adapted_time));
+              curr_time -= split_step[1];
+              if (curr_time <= 0){
+                break;
+              }
             }
-            vals[patient] += parseInt(res["Items"][i]["effective_time"], 10);
+            body.push({
+              'date_time': res["Items"][i]["date_time"],
+              'plan': adapted_plan.join(';'),
+              'effective_time': res["Items"][i]["effective_time"],
+              'weight': res["Items"][i]["weight"],
+            });
           }
         }
-        body = "<html><body><h2 style='text-align:center'>Entrenamientos de " + uid;
-        body += "</h2><table style='border:1px solid;width:100%'><thead style='background-color:black;color:white'><tr><td><b>Paciente</b></td><td><b>Tiempo efectivo</b></td></tr></thead><tbody>";
-        for (let k in vals) {
-          body += "<tr><td>" + k + "</td><td>" + vals[k] + " segundos</td></tr>";
-          total += vals[k];
-        }
-        body += "</tbody></table><p><b>Tiempo total: ";
-        body += total;
-        body += " segundos</p></body></html>";
         break;
       default:
         throw new Error(`Unsupported route: "${event.routeKey}"`);
@@ -44,7 +47,7 @@ exports.handler = async (event, context) => {
     body = err.message;
   }
   finally {
-    body = JSON.stringify(body).replace(/"/g, "");
+    body = JSON.stringify(body);
   }
 
   return {

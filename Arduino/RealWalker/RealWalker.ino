@@ -1,20 +1,44 @@
+#include <EEPROM.h>
+
 //Connections
-int sensorPin = A0;                           //scale pin
-int motorOutput = 5;                          //pwm output
+char sensorPin = A0;                           //scale pin
+char motorOutput = 5;                          //pwm output
 
 //Variables
 String input;
 //Configuration
-int calibratedWeight = 20;                  //equals 20kg
-int minValue = 0;
-int maxValue = 1024;
-int maxSpeed = 10;
+unsigned int calibratedWeight = 20;                  //equals 20kg
+unsigned int zeroValue = 0;
+unsigned int calibratedValue = 1023;
+int calibratedDifference = 1023;
+unsigned int maxSpeed = 10;
 
 
 void setup() {
   pinMode(motorOutput, OUTPUT);
+  readValuesFromRom();
   Serial.setTimeout(50);
   Serial.begin(9600);
+}
+
+void updateCalibratedDifference() {
+  calibratedDifference = calibratedValue - zeroValue;
+}
+
+void readValuesFromRom() {
+  byte myBytes[2];
+  myBytes[0] = EEPROM.read(1);
+  myBytes[1] = EEPROM.read(0);
+  zeroValue = (myBytes[0] << 8) | (myBytes[1]);
+  myBytes[0] = EEPROM.read(3);
+  myBytes[1] = EEPROM.read(2);
+  calibratedValue = (myBytes[0] << 8) | (myBytes[1]);
+  updateCalibratedDifference();
+}
+
+void updateValuesInRom() {
+  EEPROM.put(0, zeroValue);
+  EEPROM.put(2, calibratedValue);
 }
 
 void loop() {  
@@ -32,7 +56,7 @@ void loop() {
   else if (input.equals("C1")) {configureScaleCalibrated();}
   input = "";                                               // Avoid re-call the functions every loop
   
-}  
+}
 
 void readSerial() {
   char rawInput[10]="0000000000";
@@ -47,20 +71,25 @@ void setUpMotorSpeed(int speed) {
 }
 
 void configureScaleZero() {
-  minValue = analogRead(sensorPin);
+  zeroValue = analogRead(sensorPin);
+  Serial.println(zeroValue);
+  updateCalibratedDifference();
+  updateValuesInRom();
 }
 
 void configureScaleCalibrated() {
-  maxValue = analogRead(sensorPin); 
+  calibratedValue = analogRead(sensorPin);
+  Serial.println(calibratedValue);
+  updateCalibratedDifference();
+  updateValuesInRom();
 }
 
 void getScaleValue(int samples, int waitTime) {
   for (int i=0; i<samples; i++){
     delay(waitTime);
-    int weightValue = analogRead(sensorPin);
-    float ratio_1 = (float) (weightValue-minValue);
-    float ratio_2 = (float) (maxValue-minValue);
-    float ratio = ratio_1/ratio_2;
-    Serial.println(calibratedWeight*ratio);
+    unsigned int weightValue = analogRead(sensorPin);
+    int weightDifference = weightValue-zeroValue;
+    float weightRatio = (float)weightDifference/(float)calibratedDifference;
+    Serial.println(calibratedWeight*weightRatio);
   }
 }

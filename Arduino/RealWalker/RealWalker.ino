@@ -60,8 +60,8 @@ void loop() {
 
 void readSerial() {
   char rawInput[10]="0000000000";
-  int x = Serial.readBytesUntil("\n",rawInput,10);
-  input = (String(rawInput)).substring(0,x);
+  int newInput = Serial.readBytesUntil("\n",rawInput,10);
+  input = (String(rawInput)).substring(0,newInput);
 }
 
 void setUpMotorSpeed(int speed) {
@@ -72,14 +72,12 @@ void setUpMotorSpeed(int speed) {
 
 void configureScaleZero() {
   zeroValue = analogRead(sensorPin);
-  Serial.println(zeroValue);
   updateCalibratedDifference();
   updateValuesInRom();
 }
 
 void configureScaleCalibrated() {
   calibratedValue = analogRead(sensorPin);
-  Serial.println(calibratedValue);
   updateCalibratedDifference();
   updateValuesInRom();
 }

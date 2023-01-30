@@ -49,10 +49,25 @@ void loop() {
     readSerial();
   }
 
-  if (input.startsWith("P")) {
-    String weightVals = input.substring(1);
+  if (input.startsWith("PA")) {
+    String weightVals = input.substring(2);
     int separatorIndex = weightVals.indexOf("X");
-    getScaleValue(weightVals.substring(0, separatorIndex).toInt(), weightVals.substring(separatorIndex+1).toInt());
+    getScaleValueAvg(weightVals.substring(0, separatorIndex).toInt(), weightVals.substring(separatorIndex+1).toInt());
+  }
+  if (input.startsWith("PB")) {
+    String weightVals = input.substring(2);
+    int separatorIndex = weightVals.indexOf("X");
+    getScaleValueQuartileAvg(weightVals.substring(0, separatorIndex).toInt(), weightVals.substring(separatorIndex+1).toInt());
+  }
+  if (input.startsWith("PC")) {
+    String weightVals = input.substring(2);
+    int separatorIndex = weightVals.indexOf("X");
+    getScaleValueMode(weightVals.substring(0, separatorIndex).toInt(), weightVals.substring(separatorIndex+1).toInt());
+  }
+  if (input.startsWith("PD")) {
+    String weightVals = input.substring(2);
+    int separatorIndex = weightVals.indexOf("X");
+    getScaleValueQuartileMode(weightVals.substring(0, separatorIndex).toInt(), weightVals.substring(separatorIndex+1).toInt());
   }
   else if (input.startsWith("V")) {setUpMotorSpeed(input.substring(1).toInt());}
   else if (input.equals("C0")) {configureScaleZero();}
@@ -87,14 +102,82 @@ void configureScaleCalibrated() {
   updateValuesInRom();
 }
 
-void getScaleValue(int samples, int waitTime) {
-  for (int i=0; i<samples; i++){
-    delay(waitTime);
-    unsigned int weightValue = analogRead(sensorPin);
-    // Tras leer el valor de la balanza, hago una regla de tres contra el peso nulo y calibrado, para ver a qué peso
-    // corresponde el valor obtenido
-    int weightDifference = weightValue-zeroValue;
-    float weightRatio = (float)weightDifference/(float)calibratedDifference;
-    Serial.println(calibratedWeight*weightRatio);
+float readWeight(int waitTime){
+  delay(waitTime);
+  unsigned int weightValue = analogRead(sensorPin);
+  // Tras leer el valor de la balanza, hago una regla de tres contra el peso nulo y calibrado, para ver a qué peso
+  // corresponde el valor obtenido
+  int weightDifference = weightValue-zeroValue;
+  float weightRatio = (float)weightDifference/(float)calibratedDifference;
+  return calibratedWeight*weightRatio;
+}
+
+float sort(float *cmp1, float *cmp2){
+  return *cmp1 - *cmp2;
+}
+
+float getMode(float values[], int lowerLimit, int upperLimit){
+  float first_sample = values[lowerLimit];
+  float max_val = first_sample;
+  int max_occurrences = 1;
+  float curr_val = first_sample;
+  int curr_occurrences = 1;
+  for (int i=lowerLimit+1; i<upperLimit; i++){
+    float val = values[i];
+    if (curr_val == val){
+      curr_occurrences += 1;
+      if (curr_occurrences > max_occurrences){
+        max_occurrences = curr_occurrences;
+        max_val = val;
+      }
+    }else{
+      curr_val = val;
+      curr_occurrences = 1;
+    }
   }
+  return max_val;
+}
+
+void getScaleValueAvg(int sampleQty, int waitTime) {
+  float total = 0;
+  for (int i=0; i<sampleQty; i++){
+    total += readWeight(waitTime);
+  }
+  Serial.println(total/sampleQty);
+}
+
+void getScaleValueQuartileAvg(int sampleQty, int waitTime) {
+  float samples[sampleQty] = {};
+  for (int i=0; i<sampleQty; i++){
+    samples[i] = readWeight(waitTime);
+  }
+  qsort(samples, sampleQty, sizeof(samples[0]), sort);
+  int lower_limit = floor(sampleQty/4);
+  int upper_limit = ceil(3*sampleQty/4);
+  float total = 0.0;
+  for (int i=lower_limit; i<upper_limit; i++){
+    total += samples[i];
+  }
+  Serial.println(total/(upper_limit-lower_limit));
+}
+
+void getScaleValueMode(int sampleQty, int waitTime) {
+  float samples[sampleQty] = {};
+  for (int i=0; i<sampleQty; i++){
+    samples[i] = readWeight(waitTime);
+  }
+  float mode = getMode(samples, 0, sampleQty);
+  Serial.println(mode);
+}
+
+void getScaleValueQuartileMode(int sampleQty, int waitTime) {
+  float samples[sampleQty] = {};
+  for (int i=0; i<sampleQty; i++){
+    samples[i] = readWeight(waitTime);
+  }
+  qsort(samples, sampleQty, sizeof(samples[0]), sort);
+  int lower_limit = floor(sampleQty/4);
+  int upper_limit = ceil(3*sampleQty/4);
+  float mode = getMode(samples, lower_limit, upper_limit);
+  Serial.println(mode);
 }

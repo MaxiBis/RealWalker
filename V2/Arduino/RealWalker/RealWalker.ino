@@ -10,7 +10,6 @@ unsigned int zeroValue = 0; // Valor de la balanza para peso 0
 unsigned int calibratedValue = 1023; // Valor de la balanza para peso calibrado
 int calibratedDifference = 1023; // Diferencia entre los dos valores de la balanza
 unsigned int maxSpeed = 10; // Velocidad máxima solicitable desde el exterior
-float samples[50] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
 
 void setup() {
@@ -100,6 +99,10 @@ float readWeight(int waitTime){
   return calibratedWeight*weightRatio;
 }
 
+float sort(float *cmp1, float *cmp2){
+  return *cmp1 - *cmp2;
+}
+
 float getMode(float values[], int lowerLimit, int upperLimit){
   float first_sample = values[lowerLimit];
   float max_val = first_sample;
@@ -139,21 +142,22 @@ float getScaleValueAvg(int sampleQty, int waitTime) {
 }
 
 float getScaleValueQuartileAvg(int sampleQty, int waitTime) {
-  /*for (int i=0; i<sampleQty; i++){
+  float samples[sampleQty] = {};
+  for (int i=0; i<sampleQty; i++){
     samples[i] = readWeight(waitTime);
   }
-  // qsort(samples, sampleQty, sizeof(samples[0]), sort);
+  qsort(samples, sampleQty, sizeof(samples[0]), sort);
   int lower_limit = floor(sampleQty/4);
   int upper_limit = ceil(3*sampleQty/4);
   float total = 0.0;
   for (int i=lower_limit; i<upper_limit; i++){
     total += samples[i];
   }
-  return total/(upper_limit-lower_limit);*/
-  return 1;
+  return total/(upper_limit-lower_limit);
 }
 
 float getScaleValueMode(int sampleQty, int waitTime) {
+  float samples[sampleQty] = {};
   for (int i=0; i<sampleQty; i++){
     samples[i] = readWeight(waitTime);
   }
@@ -161,10 +165,10 @@ float getScaleValueMode(int sampleQty, int waitTime) {
 }
 
 float getScaleValueQuartileMode(int sampleQty, int waitTime) {
-  /*for (int i=0; i<sampleQty; i++){
+  float samples[sampleQty] = {};
+  for (int i=0; i<sampleQty; i++){
     samples[i] = readWeight(waitTime);
   }
-  // qsort(samples, sampleQty, sizeof(samples[0]), sort);
-  return getMode(samples, floor(sampleQty/4), ceil(3*sampleQty/4));*/
-  return 1;
+  qsort(samples, sampleQty, sizeof(samples[0]), sort);
+  return getMode(samples, floor(sampleQty/4), ceil(3*sampleQty/4));
 }

@@ -46,9 +46,8 @@ void updateValuesInRom() {
 
 void loop() {  
   if(Serial.available() > 0) {
-    readSerial();
+    input = Serial.readStringUntil("\n");
   }
-
   if (input.startsWith("P")) {
     String weightVals = input.substring(2);
     int separatorIndex = weightVals.indexOf("X");
@@ -57,16 +56,8 @@ void loop() {
     Serial.println(getScaleValue(input[1], sampleQty, waitTime));
   }
   else if (input.startsWith("V")) {setUpMotorSpeed(input.substring(1).toInt());}
-  else if (input.equals("C0")) {configureScaleZero();}
-  else if (input.equals("C1")) {configureScaleCalibrated();}
+  else if (input.startsWith("C")) {configureScale(input[1]);}
   input = ""; // Para no volver a llamar a las funciones en cada loop, reseteo el input
-  
-}
-
-void readSerial() {
-  char rawInput[10]="0000000000";
-  int newInput = Serial.readBytesUntil("\n",rawInput,10);
-  input = (String(rawInput)).substring(0,newInput);
 }
 
 void setUpMotorSpeed(int speed) {
@@ -77,14 +68,10 @@ void setUpMotorSpeed(int speed) {
   }
 }
 
-void configureScaleZero() {
-  zeroValue = analogRead(sensorPin);
-  updateCalibratedDifference();
-  updateValuesInRom();
-}
-
-void configureScaleCalibrated() {
-  calibratedValue = analogRead(sensorPin);
+void configureScale(char value) {
+  unsigned int newValue = analogRead(sensorPin);
+  if (value == '0') {zeroValue = newValue;}
+  else if (value == '1') {calibratedValue = newValue;}
   updateCalibratedDifference();
   updateValuesInRom();
 }

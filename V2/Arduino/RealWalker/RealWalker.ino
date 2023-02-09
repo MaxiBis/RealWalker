@@ -45,9 +45,7 @@ void updateValuesInRom() {
 }
 
 void loop() {  
-  if(Serial.available() > 0) {
-    input = Serial.readStringUntil("\n");
-  }
+  if(Serial.available() > 0) {input = Serial.readStringUntil("\n");}
   if (input.startsWith("P")) {
     String weightVals = input.substring(2);
     int separatorIndex = weightVals.indexOf("X");
@@ -63,9 +61,7 @@ void loop() {
 void setUpMotorSpeed(int speed) {
   // Lo máximo que puedo dar es 255, así que hago un proporcional tomando la velocidad solicitada y la máxima posible
   // (ej.: si la velocidad máxima es 10 y la que recibo por parámetro es 10, voy a dar 255)
-  if (speed >= 0 && speed <= maxSpeed){
-    analogWrite(motorOutput, int(255 * speed / maxSpeed));
-  }
+  if (speed >= 0 && speed <= maxSpeed) {analogWrite(motorOutput, int(255 * speed / maxSpeed));}
 }
 
 void configureScale(char value) {
@@ -82,7 +78,7 @@ float readWeight(int waitTime){
   // Tras leer el valor de la balanza, hago una regla de tres contra el peso nulo y calibrado, para ver a qué peso
   // corresponde el valor obtenido
   int weightDifference = weightValue-zeroValue;
-  float weightRatio = (float)weightDifference/(float)calibratedDifference;
+  float weightRatio = (float)weightDifference/calibratedDifference;
   return calibratedWeight*weightRatio;
 }
 
@@ -117,45 +113,34 @@ float getScaleValue(char method, int sampleQty, int waitTime){
   else if (method == 'B') {return getScaleValueQuartileAvg(sampleQty, waitTime);}
   else if (method == 'C') {return getScaleValueMode(sampleQty, waitTime);}
   else if (method == 'D') {return getScaleValueQuartileMode(sampleQty, waitTime);}
-  return 0;
 }
 
 float getScaleValueAvg(int sampleQty, int waitTime) {
   float total = 0;
-  for (int i=0; i<sampleQty; i++){
-    total += readWeight(waitTime);
-  }
+  for (int i=0; i<sampleQty; i++) {total += readWeight(waitTime);}
   return total/sampleQty;
 }
 
 float getScaleValueQuartileAvg(int sampleQty, int waitTime) {
   float samples[sampleQty] = {};
-  for (int i=0; i<sampleQty; i++){
-    samples[i] = readWeight(waitTime);
-  }
+  for (int i=0; i<sampleQty; i++) {samples[i] = readWeight(waitTime);}
   qsort(samples, sampleQty, sizeof(samples[0]), sort);
   int lower_limit = floor(sampleQty/4);
   int upper_limit = ceil(3*sampleQty/4);
   float total = 0.0;
-  for (int i=lower_limit; i<upper_limit; i++){
-    total += samples[i];
-  }
+  for (int i=lower_limit; i<upper_limit; i++) {total += samples[i];}
   return total/(upper_limit-lower_limit);
 }
 
 float getScaleValueMode(int sampleQty, int waitTime) {
   float samples[sampleQty] = {};
-  for (int i=0; i<sampleQty; i++){
-    samples[i] = readWeight(waitTime);
-  }
+  for (int i=0; i<sampleQty; i++) {samples[i] = readWeight(waitTime);}
   return getMode(samples, 0, sampleQty);
 }
 
 float getScaleValueQuartileMode(int sampleQty, int waitTime) {
   float samples[sampleQty] = {};
-  for (int i=0; i<sampleQty; i++){
-    samples[i] = readWeight(waitTime);
-  }
+  for (int i=0; i<sampleQty; i++) {samples[i] = readWeight(waitTime);}
   qsort(samples, sampleQty, sizeof(samples[0]), sort);
   return getMode(samples, floor(sampleQty/4), ceil(3*sampleQty/4));
 }

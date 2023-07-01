@@ -135,6 +135,7 @@ float getScaleValueQuartileAvg(int sampleQty, int waitTime) {
 float getScaleValueMode(int sampleQty, int waitTime) {
   float samples[sampleQty] = {};
   for (int i=0; i<sampleQty; i++) {samples[i] = readWeight(waitTime);}
+  qsort(samples, sampleQty, sizeof(samples[0]), sort);
   return getMode(samples, 0, sampleQty);
 }
 

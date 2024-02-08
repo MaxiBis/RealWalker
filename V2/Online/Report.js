@@ -37,6 +37,10 @@ exports.handler = async (event, context) => {
             });
           }
         }
+        if (body.length == 0){
+          statusCode = 401;
+          body = {'error': 'No se puede emitir un reporte sin entrenamientos'};
+        }
         break;
       default:
         throw new Error(`Unsupported route: "${event.routeKey}"`);
